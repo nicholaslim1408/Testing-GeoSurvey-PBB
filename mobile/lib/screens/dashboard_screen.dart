@@ -26,6 +26,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   TaskStats? _stats;
   bool _isLoadingUser  = true;
   bool _isLoadingStats = true;
+  bool _isSidebarOpen  = true; // Sidebar toggle state
   int  _selectedNav    = 0; // 0=Dashboard, 1=Formulir, ...
 
   @override
@@ -105,7 +106,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Row(children: [
-        _buildSidebar(),
+        if (_isSidebarOpen)
+          _buildSidebar(),
         Expanded(child: _buildContent()),
       ]),
     );
@@ -293,8 +295,16 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(32),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        // Header greeting
+        // Toggle button & Header
         Row(children: [
+          IconButton(
+            icon: Icon(
+              _isSidebarOpen ? Icons.menu_open_rounded : Icons.menu_rounded,
+              color: AppColors.textPrimary,
+            ),
+            onPressed: () => setState(() => _isSidebarOpen = !_isSidebarOpen),
+            tooltip: _isSidebarOpen ? 'Tutup Sidebar' : 'Buka Sidebar',
+          ),
           Expanded(child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
