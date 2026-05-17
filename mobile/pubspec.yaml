@@ -1,0 +1,30 @@
+name: geosurvey_pbb
+description: Aplikasi survei lapangan untuk pendataan Pajak Bumi dan Bangunan
+
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # HTTP Client untuk panggil API
+  dio: ^5.4.3+1
+
+  # Penyimpanan lokal (JWT token, user session)
+  shared_preferences: ^2.2.3
+
+  # Routing navigasi
+  go_router: ^13.2.0
+
+  # Icon pack tambahan
+  cupertino_icons: ^1.0.6
+
+  # Fonts dari Google
+  google_fonts: ^6.2.1
+
+flutter:
+  uses-material-design: true
