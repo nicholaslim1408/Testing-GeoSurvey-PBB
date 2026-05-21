@@ -1,5 +1,6 @@
 import 'dart:async';
-
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -35,6 +36,13 @@ class _MapPageState extends State<MapPage> {
     LatLng(-6.200000, 106.816666); // Default to Jakarta
 
   StreamSubscription<Position>? positionStream;
+
+  File? capturedImage;
+
+  double? capturedLat;
+  double? capturedLng;
+
+  final LatLng targetLocation = LatLng(-6.175392, 106.827153); // Target location (Jakarta)
 
   @override
   void initState() {
@@ -82,6 +90,27 @@ class _MapPageState extends State<MapPage> {
     });
   }
 
+  Future<void> takePhoto() async {
+    final picker = ImagePicker();
+    final XFile? photo = await picker.pickImage(source: ImageSource.camera);
+
+    if (photo == null) return;
+    
+    Position pos = await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.bestForNavigation,
+  );
+
+    setState(() {
+      capturedImage = File(photo.path);
+      capturedLat = pos.latitude;
+      capturedLng = pos.longitude;
+      });
+
+    print("Foto Tersimpan");
+    print("Latitude: $capturedLat, Longitude: $capturedLng");
+  }
+
+
 
   @override
   void dispose() {
@@ -94,6 +123,11 @@ class _MapPageState extends State<MapPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text("Lokasi Tracker"),
+      ),
+
+      floatingActionButton: FloatingActionButton(
+        onPressed: takePhoto,
+        child: const Icon(Icons.camera_alt),
       ),
       body: FlutterMap(
         mapController: mapController,
@@ -109,6 +143,7 @@ class _MapPageState extends State<MapPage> {
           ),
           MarkerLayer(
             markers: [
+              //marker user
               Marker(
                 width: 80,
                 height: 80,
@@ -119,6 +154,17 @@ class _MapPageState extends State<MapPage> {
                   size: 40,
                 ),
               ),
+              //marker target
+              Marker(
+                width: 80,
+                height: 80,
+                point: targetLocation,
+                child: const Icon(
+                  Icons.flag,
+                  color: Colors.blue,
+                  size: 40,
+                ),
+              ),
             ],
           ),
         ],
@@ -126,4 +172,3 @@ class _MapPageState extends State<MapPage> {
     );
   }
 }
-            
