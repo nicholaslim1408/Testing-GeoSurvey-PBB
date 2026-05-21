@@ -131,7 +131,7 @@ class AuthService {
       return 'Koneksi timeout. Periksa jaringan kamu.';
     }
     if (e.type == DioExceptionType.connectionError) {
-      return 'Tidak bisa terhubung ke server. Pastikan backend sudah berjalan.';
+      return 'Tidak bisa terhubung ke server. Coba Hubungi admin jika masalah berlanjut.';
     }
     // Error dari response server (400, 401, 403, 409, 500)
     if (e.response != null && e.response!.data != null) {
