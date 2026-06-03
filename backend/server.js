@@ -17,14 +17,10 @@ const PORT = process.env.PORT || 3000;
 
 // ── Middleware Global ─────────────────────────────────────────
 app.use(cors({
-  origin: [
-    'http://localhost:51236',
-    'http://localhost:5000',
-    'http://localhost:3000',
-    'http://localhost:8080',
-    'http://127.0.0.1:5000',
-    'http://127.0.0.1:8080',
-  ],
+  origin: function (origin, callback) {
+    // Izinkan semua origin (berguna untuk Flutter Web yang port-nya sering berubah-ubah)
+    callback(null, true);
+  },
   methods:        ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials:    true,
