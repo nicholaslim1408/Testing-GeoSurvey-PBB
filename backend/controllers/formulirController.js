@@ -48,8 +48,8 @@ const getAllTasks = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      data:    tasks,
-      total:   tasks.length,
+      data: tasks,
+      total: tasks.length,
     });
   } catch (error) {
     console.error('getAllTasks error:', error);
@@ -85,7 +85,7 @@ const getTaskById = async (req, res) => {
     return res.status(200).json({
       success: true,
       data: {
-        task:     tasks[0],
+        task: tasks[0],
         formulir: formulir.length > 0 ? formulir[0] : null,
       },
     });
@@ -122,6 +122,15 @@ const saveFormulir = async (req, res) => {
       // Lainnya
       fasilitas,
       catatan,
+      penggunaan_bangunan,
+      status_kepemilikan,
+      tahun_renovasi,
+      daya_listrik,
+      akses_jalan,
+      lebar_jalan,
+      pagar,
+      sumber_air,
+      status_hunian,
     } = req.body;
 
     // ── Validasi field wajib ──────────────────────────────────
@@ -171,21 +180,33 @@ const saveFormulir = async (req, res) => {
           luas_bangunan    = ?, jumlah_lantai    = ?, tahun_dibangun   = ?,
           kondisi_bangunan = ?, material_dinding = ?, material_atap    = ?,
           material_lantai  = ?, fasilitas        = ?, catatan          = ?,
+          penggunaan_bangunan = ?, status_kepemilikan = ?, tahun_renovasi = ?,
+          daya_listrik     = ?, akses_jalan      = ?, lebar_jalan      = ?,
+          pagar            = ?, sumber_air       = ?, status_hunian    = ?,
           status_sync      = 'draft'
         WHERE task_id = ?`,
         [
-          luas_bumi        || 0,
-          jenis_bumi       || null,
-          kondisi_tanah    || null,
-          luas_bangunan    || 0,
-          jumlah_lantai    || 1,
-          tahun_dibangun   || null,
+          luas_bumi || 0,
+          jenis_bumi || null,
+          kondisi_tanah || null,
+          luas_bangunan || 0,
+          jumlah_lantai || 1,
+          tahun_dibangun || null,
           kondisi_bangunan || null,
           material_dinding || null,
-          material_atap    || null,
-          material_lantai  || null,
+          material_atap || null,
+          material_lantai || null,
           fasilitasJson,
-          catatan          || null,
+          catatan || null,
+          penggunaan_bangunan || null,
+          status_kepemilikan || null,
+          tahun_renovasi || null,
+          daya_listrik || null,
+          akses_jalan || null,
+          lebar_jalan || null,
+          pagar || null,
+          sumber_air || null,
+          status_hunian || null,
           task_id,
         ]
       );
@@ -199,7 +220,7 @@ const saveFormulir = async (req, res) => {
       return res.status(200).json({
         success: true,
         message: 'Formulir berhasil diperbarui.',
-        data:    { formulir_id: existing[0].id },
+        data: { formulir_id: existing[0].id },
       });
     } else {
       // ── INSERT formulir baru ──────────────────────────────
@@ -209,24 +230,37 @@ const saveFormulir = async (req, res) => {
            luas_bumi, jenis_bumi, kondisi_tanah,
            luas_bangunan, jumlah_lantai, tahun_dibangun, kondisi_bangunan,
            material_dinding, material_atap, material_lantai,
-           fasilitas, catatan, status_sync)
-         VALUES (?,?,?, ?,?,?, ?,?,?,?, ?,?,?, ?,?,'draft')`,
+           fasilitas, catatan,
+           penggunaan_bangunan, status_kepemilikan, tahun_renovasi,
+           daya_listrik, akses_jalan, lebar_jalan,
+           pagar, sumber_air, status_hunian,
+           status_sync)
+         VALUES (?,?,?, ?,?,?, ?,?,?,?, ?,?,?, ?,?, ?,?,?, ?,?,?, ?,?,?, 'draft')`,
         [
           task_id,
           enumeratorId,
           nop,
-          luas_bumi        || 0,
-          jenis_bumi       || null,
-          kondisi_tanah    || null,
-          luas_bangunan    || 0,
-          jumlah_lantai    || 1,
-          tahun_dibangun   || null,
+          luas_bumi || 0,
+          jenis_bumi || null,
+          kondisi_tanah || null,
+          luas_bangunan || 0,
+          jumlah_lantai || 1,
+          tahun_dibangun || null,
           kondisi_bangunan || null,
           material_dinding || null,
-          material_atap    || null,
-          material_lantai  || null,
+          material_atap || null,
+          material_lantai || null,
           fasilitasJson,
-          catatan          || null,
+          catatan || null,
+          penggunaan_bangunan || null,
+          status_kepemilikan || null,
+          tahun_renovasi || null,
+          daya_listrik || null,
+          akses_jalan || null,
+          lebar_jalan || null,
+          pagar || null,
+          sumber_air || null,
+          status_hunian || null,
         ]
       );
 
@@ -239,7 +273,7 @@ const saveFormulir = async (req, res) => {
       return res.status(201).json({
         success: true,
         message: 'Formulir berhasil disimpan.',
-        data:    { formulir_id: result.insertId },
+        data: { formulir_id: result.insertId },
       });
     }
   } catch (error) {
@@ -314,7 +348,7 @@ const getFormulirByTask = async (req, res) => {
     // Parse JSON fasilitas
     const data = formulir[0];
     if (data.fasilitas && typeof data.fasilitas === 'string') {
-      try { data.fasilitas = JSON.parse(data.fasilitas); } catch (_) {}
+      try { data.fasilitas = JSON.parse(data.fasilitas); } catch (_) { }
     }
 
     return res.status(200).json({ success: true, data });
@@ -330,18 +364,18 @@ const getFormulirByTask = async (req, res) => {
 // ─────────────────────────────────────────────────────────────
 const getStats = async (req, res) => {
   try {
-    const [[totalRow]]    = await pool.query('SELECT COUNT(*) AS total FROM survey_tasks');
-    const [[pendingRow]]  = await pool.query("SELECT COUNT(*) AS total FROM survey_tasks WHERE status_task = 'pending'");
+    const [[totalRow]] = await pool.query('SELECT COUNT(*) AS total FROM survey_tasks');
+    const [[pendingRow]] = await pool.query("SELECT COUNT(*) AS total FROM survey_tasks WHERE status_task = 'pending'");
     const [[progressRow]] = await pool.query("SELECT COUNT(*) AS total FROM survey_tasks WHERE status_task = 'in_progress'");
-    const [[doneRow]]     = await pool.query("SELECT COUNT(*) AS total FROM survey_tasks WHERE status_task = 'completed'");
+    const [[doneRow]] = await pool.query("SELECT COUNT(*) AS total FROM survey_tasks WHERE status_task = 'completed'");
 
     return res.status(200).json({
       success: true,
       data: {
-        total:       totalRow.total,
-        pending:     pendingRow.total,
+        total: totalRow.total,
+        pending: pendingRow.total,
         in_progress: progressRow.total,
-        completed:   doneRow.total,
+        completed: doneRow.total,
       },
     });
   } catch (error) {

@@ -407,7 +407,7 @@ class _DashboardScreenState extends State<DashboardScreen>
             Expanded(child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Halo, ${_user?.fullName ?? 'User'}! 👋',
+                Text('Halo, ${_user?.fullName ?? 'User'}!',
                     style: GoogleFonts.plusJakartaSans(
                         fontSize: 24, fontWeight: FontWeight.w800,
                         color: AppColors.textPrimary)),

@@ -75,7 +75,7 @@ class _LoginScreenState extends State<LoginScreen>
 
     setState(() => _isLoading = false);
 
-    if (result.success || 1 == 1) {
+    if (result.success) {
       // Navigasi ke Dashboard
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const DashboardScreen()),

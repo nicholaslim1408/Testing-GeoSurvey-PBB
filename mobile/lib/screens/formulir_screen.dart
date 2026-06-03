@@ -388,7 +388,7 @@ class _FormulirScreenState extends State<FormulirScreen> {
               const SizedBox(height: 12),
 
             // Section: Data Tanah
-            _buildSectionHeader('🌱 Data Tanah', 'Informasi luas dan kondisi tanah'),
+            _buildSectionHeader('Data Tanah', 'Informasi luas dan kondisi tanah'),
             const SizedBox(height: 12),
             _buildNumberField(
               controller: _luasBumiCtrl,
@@ -443,7 +443,7 @@ class _FormulirScreenState extends State<FormulirScreen> {
             const SizedBox(height: 20),
 
             // Section: Data Bangunan
-            _buildSectionHeader('🏠 Data Bangunan', 'Informasi fisik bangunan'),
+            _buildSectionHeader('Data Bangunan', 'Informasi fisik bangunan'),
             const SizedBox(height: 12),
             _buildDropdown(
               value:    _penggunaanBangunan,
@@ -524,7 +524,7 @@ class _FormulirScreenState extends State<FormulirScreen> {
             const SizedBox(height: 20),
 
             // Section: Material
-            _buildSectionHeader('🧱 Material Konstruksi', 'Material utama bangunan'),
+            _buildSectionHeader('Material Konstruksi', 'Material utama bangunan'),
             const SizedBox(height: 12),
             _buildDropdown(
               value:    _materialDinding,
@@ -572,13 +572,13 @@ class _FormulirScreenState extends State<FormulirScreen> {
             const SizedBox(height: 20),
 
             // Section: Fasilitas
-            _buildSectionHeader('⚡ Fasilitas', 'Centang fasilitas yang tersedia'),
+            _buildSectionHeader('Fasilitas', 'Centang fasilitas yang tersedia'),
             const SizedBox(height: 12),
             _buildFasilitasGrid(),
             const SizedBox(height: 20),
 
             // Section: Catatan
-            _buildSectionHeader('📝 Catatan', 'Informasi tambahan (opsional)'),
+            _buildSectionHeader('Catatan', 'Informasi tambahan (opsional)'),
             const SizedBox(height: 12),
             TextFormField(
               controller: _catatanCtrl,
