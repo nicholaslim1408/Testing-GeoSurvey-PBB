@@ -26,5 +26,9 @@ dependencies:
   # Fonts dari Google
   google_fonts: ^6.2.1
 
+  # Phase 3: Scanner QR Code & Barcode
+  # Bekerja di Flutter Web menggunakan kamera browser
+  mobile_scanner: ^7.2.0
+
 flutter:
   uses-material-design: true

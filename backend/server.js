@@ -1,7 +1,6 @@
 // server.js
 // ============================================================
-// Entry point utama backend GeoSurvey PBB
-// UPDATE Phase 2: tambah formulirRoutes
+// UPDATE Phase 3: version bump ke 3.0.0, tambah log endpoint baru
 // ============================================================
 
 require('dotenv').config();
@@ -9,7 +8,7 @@ require('dotenv').config();
 const express        = require('express');
 const cors           = require('cors');
 const authRoutes     = require('./routes/authRoutes');
-const formulirRoutes = require('./routes/formulirRoutes'); // ← BARU Phase 2
+const formulirRoutes = require('./routes/formulirRoutes');
 const { testConnection } = require('./config/db');
 
 const app  = express();
@@ -18,7 +17,7 @@ const PORT = process.env.PORT || 3000;
 // ── Middleware Global ─────────────────────────────────────────
 app.use(cors({
   origin: [
-    'http://localhost:51236',
+    'http://localhost:54041',
     'http://localhost:5000',
     'http://localhost:3000',
     'http://localhost:8080',
@@ -38,15 +37,12 @@ app.get('/', (req, res) => {
   res.json({
     success:   true,
     message:   '🌍 GeoSurvey PBB API is running!',
-    version:   '2.0.0',
+    version:   '3.0.0',
     timestamp: new Date().toISOString(),
   });
 });
 
-// Phase 1 - Auth
 app.use('/api/auth',     authRoutes);
-
-// Phase 2 - Formulir Pendataan
 app.use('/api/formulir', formulirRoutes);
 
 // ── 404 Handler ───────────────────────────────────────────────
@@ -71,16 +67,19 @@ const startServer = async () => {
   await testConnection();
   app.listen(PORT, () => {
     console.log(`🚀 Server berjalan di http://localhost:${PORT}`);
-    console.log(`📋 Endpoints:`);
+    console.log(`\n📋 Auth Endpoints:`);
     console.log(`   POST http://localhost:${PORT}/api/auth/register`);
     console.log(`   POST http://localhost:${PORT}/api/auth/login`);
     console.log(`   GET  http://localhost:${PORT}/api/auth/profile`);
+    console.log(`\n📋 Formulir Endpoints:`);
     console.log(`   GET  http://localhost:${PORT}/api/formulir/stats`);
     console.log(`   GET  http://localhost:${PORT}/api/formulir/tasks`);
     console.log(`   GET  http://localhost:${PORT}/api/formulir/tasks/:id`);
     console.log(`   POST http://localhost:${PORT}/api/formulir/save`);
     console.log(`   POST http://localhost:${PORT}/api/formulir/submit/:task_id`);
     console.log(`   GET  http://localhost:${PORT}/api/formulir/:task_id`);
+    console.log(`\n📋 Scanner Endpoints (Phase 3):`);
+    console.log(`   GET  http://localhost:${PORT}/api/formulir/nop/:nop`);
   });
 };
 

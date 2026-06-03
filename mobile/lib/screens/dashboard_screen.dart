@@ -1,6 +1,6 @@
 // lib/screens/dashboard_screen.dart
 // ============================================================
-// UPDATE Phase 2: tambah statistik task & navigasi ke formulir
+// UPDATE Phase 3: aktifkan navigasi Scanner NOP di sidebar
 // ============================================================
 
 import 'package:flutter/material.dart';
@@ -13,6 +13,7 @@ import '../models/user_model.dart';
 import '../models/formulir_model.dart';
 import 'login_screen.dart';
 import 'task_list_screen.dart';
+import 'scanner_screen.dart'; // ← BARU Phase 3
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -26,8 +27,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   TaskStats? _stats;
   bool _isLoadingUser  = true;
   bool _isLoadingStats = true;
-  bool _isSidebarOpen  = true; // Sidebar toggle state
-  int  _selectedNav    = 0; // 0=Dashboard, 1=Formulir, ...
+  int  _selectedNav    = 0;
 
   @override
   void initState() {
@@ -60,7 +60,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
         title: Text('Konfirmasi Logout',
             style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
         content: Text('Apakah kamu yakin ingin keluar?',
-            style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary)),
+            style: GoogleFonts.plusJakartaSans(
+                color: AppColors.textSecondary)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -73,19 +74,19 @@ class _DashboardScreenState extends State<DashboardScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.error,
               foregroundColor: Colors.white,
-              minimumSize: Size.zero,
+              minimumSize:     Size.zero,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8)),
               elevation: 0,
             ),
             child: Text('Logout',
-                style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600)),
+                style: GoogleFonts.plusJakartaSans(
+                    fontWeight: FontWeight.w600)),
           ),
         ],
       ),
     );
-
     if (confirm == true) {
       await AuthService.logout();
       if (mounted) {
@@ -102,12 +103,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
       return const Scaffold(
           body: Center(child: CircularProgressIndicator()));
     }
-
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Row(children: [
-        if (_isSidebarOpen)
-          _buildSidebar(),
+        _buildSidebar(),
         Expanded(child: _buildContent()),
       ]),
     );
@@ -115,12 +114,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   // ── Sidebar ────────────────────────────────────────────────
   Widget _buildSidebar() {
+    // (icon, label, isComingSoon, onTap)
     final navItems = [
-      (Icons.dashboard_rounded,      'Dashboard',          false),
-      (Icons.assignment_rounded,     'Formulir Pendataan', false), // aktif Phase 2
-      (Icons.qr_code_scanner_rounded,'Scanner NOP',        true),  // Phase 3
-      (Icons.camera_alt_rounded,     'Kamera & GPS',       true),  // Phase 4
-      (Icons.satellite_alt_rounded,  'Citra Satelit',      true),  // Phase 5
+      (Icons.dashboard_rounded,       'Dashboard',          false, () {}),
+      (Icons.assignment_rounded,      'Formulir Pendataan', false, () {
+        Navigator.push(context,
+          MaterialPageRoute(builder: (_) => const TaskListScreen()),
+        ).then((_) => _loadStats());
+      }),
+      (Icons.qr_code_scanner_rounded, 'Scanner NOP',        false, () {  // ← aktif Phase 3
+        Navigator.push(context,
+          MaterialPageRoute(builder: (_) => const ScannerScreen()),
+        ).then((_) => _loadStats());
+      }),
+      (Icons.camera_alt_rounded,      'Kamera & GPS',       true,  () {}),
+      (Icons.satellite_alt_rounded,   'Citra Satelit',      true,  () {}),
     ];
 
     return Container(
@@ -186,8 +194,8 @@ class _DashboardScreenState extends State<DashboardScreen> {
                         color: Colors.white, fontSize: 13,
                         fontWeight: FontWeight.w600)),
                 Container(
-                  margin:     const EdgeInsets.only(top: 2),
-                  padding:    const EdgeInsets.symmetric(
+                  margin:  const EdgeInsets.only(top: 2),
+                  padding: const EdgeInsets.symmetric(
                       horizontal: 8, vertical: 2),
                   decoration: BoxDecoration(
                     color:        Colors.white.withOpacity(0.2),
@@ -206,59 +214,57 @@ class _DashboardScreenState extends State<DashboardScreen> {
         Expanded(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Column(children: navItems.asMap().entries.map((entry) {
-              final i    = entry.key;
-              final item = entry.value;
-              final isActive  = _selectedNav == i;
-              final isComingSoon = item.$3;
+            child: Column(
+              children: navItems.asMap().entries.map((entry) {
+                final i    = entry.key;
+                final item = entry.value;
+                final isActive     = _selectedNav == i;
+                final isComingSoon = item.$3;
 
-              return Container(
-                margin: const EdgeInsets.only(bottom: 4),
-                child: ListTile(
-                  dense:   true,
-                  leading: Icon(item.$1,
-                      size:  20,
-                      color: isActive
-                          ? Colors.white
-                          : Colors.white60),
-                  title: Text(item.$2,
-                      style: GoogleFonts.plusJakartaSans(
-                          color: isActive ? Colors.white : Colors.white70,
-                          fontSize: 13,
-                          fontWeight: isActive
-                              ? FontWeight.w600
-                              : FontWeight.w400)),
-                  trailing: isComingSoon
-                      ? Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 6, vertical: 2),
-                          decoration: BoxDecoration(
-                            color:        Colors.white.withOpacity(0.15),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text('Soon',
-                              style: TextStyle(
-                                  color: Colors.white60, fontSize: 9)),
-                        )
-                      : null,
-                  tileColor: isActive
-                      ? Colors.white.withOpacity(0.15)
-                      : Colors.transparent,
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
-                  onTap: isComingSoon ? null : () {
-                    setState(() => _selectedNav = i);
-                    if (i == 1) {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                            builder: (_) => const TaskListScreen()),
-                      ).then((_) => _loadStats()); // refresh stats setelah kembali
-                    }
-                  },
-                ),
-              );
-            }).toList()),
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 4),
+                  child: ListTile(
+                    dense:   true,
+                    leading: Icon(item.$1,
+                        size:  20,
+                        color: isActive ? Colors.white : Colors.white60),
+                    title: Text(item.$2,
+                        style: GoogleFonts.plusJakartaSans(
+                            color: isActive
+                                ? Colors.white
+                                : Colors.white70,
+                            fontSize:   13,
+                            fontWeight: isActive
+                                ? FontWeight.w600
+                                : FontWeight.w400)),
+                    trailing: isComingSoon
+                        ? Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color:        Colors.white.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: const Text('Soon',
+                                style: TextStyle(
+                                    color: Colors.white60, fontSize: 9)),
+                          )
+                        : null,
+                    tileColor: isActive
+                        ? Colors.white.withOpacity(0.15)
+                        : Colors.transparent,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
+                    onTap: isComingSoon
+                        ? null
+                        : () {
+                            setState(() => _selectedNav = i);
+                            item.$4(); // panggil onTap masing-masing
+                          },
+                  ),
+                );
+              }).toList(),
+            ),
           ),
         ),
 
@@ -295,16 +301,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(32),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        // Toggle button & Header
         Row(children: [
-          IconButton(
-            icon: Icon(
-              _isSidebarOpen ? Icons.menu_open_rounded : Icons.menu_rounded,
-              color: AppColors.textPrimary,
-            ),
-            onPressed: () => setState(() => _isSidebarOpen = !_isSidebarOpen),
-            tooltip: _isSidebarOpen ? 'Tutup Sidebar' : 'Buka Sidebar',
-          ),
           Expanded(child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -318,7 +315,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
                       color: AppColors.textSecondary)),
             ],
           )),
-          // Refresh button
           IconButton(
             onPressed: _loadStats,
             icon: const Icon(Icons.refresh_rounded,
@@ -327,7 +323,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ]),
         const SizedBox(height: 28),
 
-        // ── Statistik Task ─────────────────────────────────
         Text('Statistik Survey',
             style: GoogleFonts.plusJakartaSans(
                 fontSize: 16, fontWeight: FontWeight.w700,
@@ -336,7 +331,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _buildStatsRow(),
         const SizedBox(height: 28),
 
-        // ── Quick Action ──────────────────────────────────
         Text('Aksi Cepat',
             style: GoogleFonts.plusJakartaSans(
                 fontSize: 16, fontWeight: FontWeight.w700,
@@ -345,7 +339,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _buildQuickActions(),
         const SizedBox(height: 28),
 
-        // ── Phase Status ──────────────────────────────────
         Text('Status Pengembangan',
             style: GoogleFonts.plusJakartaSans(
                 fontSize: 16, fontWeight: FontWeight.w700,
@@ -356,7 +349,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // ── Stats Row ──────────────────────────────────────────────
   Widget _buildStatsRow() {
     final cards = [
       ('Total Task',  _stats?.total,      AppColors.primary,       Icons.assignment_rounded),
@@ -364,15 +356,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ('Proses',      _stats?.inProgress, AppColors.warning,       Icons.pending_rounded),
       ('Selesai',     _stats?.completed,  AppColors.accent,        Icons.check_circle_rounded),
     ];
-
     return Wrap(spacing: 14, runSpacing: 14, children: cards.map((c) {
       return Container(
         width:      170,
         padding:    const EdgeInsets.all(18),
         decoration: BoxDecoration(
-          color:        AppColors.surface,
+          color: AppColors.surface,
           borderRadius: BorderRadius.circular(14),
-          border:       Border.all(color: AppColors.border),
+          border: Border.all(color: AppColors.border),
           boxShadow: [BoxShadow(
             color: Colors.black.withOpacity(0.03),
             blurRadius: 8, offset: const Offset(0, 2),
@@ -402,37 +393,34 @@ class _DashboardScreenState extends State<DashboardScreen> {
     }).toList());
   }
 
-  // ── Quick Actions ──────────────────────────────────────────
   Widget _buildQuickActions() {
     return Wrap(spacing: 14, runSpacing: 14, children: [
       _buildActionCard(
-        icon:    Icons.assignment_add,
-        label:   'Isi Formulir',
-        desc:    'Mulai pendataan properti',
-        color:   AppColors.primary,
-        onTap: () => Navigator.push(
-          context,
+        icon:  Icons.assignment_add,
+        label: 'Isi Formulir',
+        desc:  'Mulai pendataan properti',
+        color: AppColors.primary,
+        onTap: () => Navigator.push(context,
           MaterialPageRoute(builder: (_) => const TaskListScreen()),
         ).then((_) => _loadStats()),
       ),
       _buildActionCard(
-        icon:    Icons.list_alt_rounded,
-        label:   'Lihat Semua Task',
-        desc:    'Cek status survey task',
-        color:   AppColors.accent,
-        onTap: () => Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => const TaskListScreen()),
+        icon:  Icons.qr_code_scanner_rounded,
+        label: 'Scan NOP',
+        desc:  'Scan barcode/QR properti',
+        color: AppColors.accent,
+        onTap: () => Navigator.push(context,
+          MaterialPageRoute(builder: (_) => const ScannerScreen()),
         ).then((_) => _loadStats()),
       ),
     ]);
   }
 
   Widget _buildActionCard({
-    required IconData  icon,
-    required String    label,
-    required String    desc,
-    required Color     color,
+    required IconData     icon,
+    required String       label,
+    required String       desc,
+    required Color        color,
     required VoidCallback onTap,
   }) {
     return InkWell(
@@ -473,16 +461,14 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
-  // ── Phase Cards ────────────────────────────────────────────
   Widget _buildPhaseCards() {
     final phases = [
-      ('Phase 1', 'Setup & Auth',    Icons.lock_rounded,           true),
-      ('Phase 2', 'Formulir',        Icons.assignment_rounded,     true),  // ← selesai
-      ('Phase 3', 'Scanner NOP',     Icons.qr_code_rounded,        false),
-      ('Phase 4', 'Kamera & GPS',    Icons.camera_alt_rounded,     false),
-      ('Phase 5', 'Citra Satelit',   Icons.satellite_alt_rounded,  false),
+      ('Phase 1', 'Setup & Auth',   Icons.lock_rounded,           true),
+      ('Phase 2', 'Formulir',       Icons.assignment_rounded,     true),
+      ('Phase 3', 'Scanner NOP',    Icons.qr_code_rounded,        true),  // ← selesai
+      ('Phase 4', 'Kamera & GPS',   Icons.camera_alt_rounded,     false),
+      ('Phase 5', 'Citra Satelit',  Icons.satellite_alt_rounded,  false),
     ];
-
     return Wrap(spacing: 14, runSpacing: 14, children: phases.map((p) {
       final isDone = p.$4;
       return Container(
