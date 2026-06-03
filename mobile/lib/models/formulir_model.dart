@@ -96,6 +96,18 @@ class FormulirModel {
   final String? catatan;
   final String  statusSync; // draft | synced | failed
 
+  // --- NEW FIELDS (Ditambahkan untuk melengkapi SPOP/LSPOP) ---
+  final String? penggunaanBangunan;
+  final String? statusKepemilikan;
+  final int?    tahunRenovasi;
+  final String? dayaListrik;
+  final String? aksesJalan;
+  final double? lebarJalan;
+  final String? pagar;
+  final String? sumberAir;
+  final String? statusHunian;
+  // -----------------------------------------------------------
+
   const FormulirModel({
     this.id,
     required this.taskId,
@@ -113,6 +125,17 @@ class FormulirModel {
     this.fasilitas = const [],
     this.catatan,
     this.statusSync = 'draft',
+    // --- NEW FIELDS ---
+    this.penggunaanBangunan,
+    this.statusKepemilikan,
+    this.tahunRenovasi,
+    this.dayaListrik,
+    this.aksesJalan,
+    this.lebarJalan,
+    this.pagar,
+    this.sumberAir,
+    this.statusHunian,
+    // ------------------
   });
 
   // Buat dari JSON response API
@@ -141,6 +164,18 @@ class FormulirModel {
       fasilitas:       parsedFasilitas,
       catatan:         json['catatan'] as String?,
       statusSync:      json['status_sync'] as String? ?? 'draft',
+      
+      // --- NEW FIELDS (Parsing dari backend JSON) ---
+      penggunaanBangunan: json['penggunaan_bangunan'] as String?,
+      statusKepemilikan:  json['status_kepemilikan'] as String?,
+      tahunRenovasi:      json['tahun_renovasi'] as int?,
+      dayaListrik:        json['daya_listrik'] as String?,
+      aksesJalan:         json['akses_jalan'] as String?,
+      lebarJalan:         json['lebar_jalan'] != null ? double.tryParse(json['lebar_jalan'].toString()) : null,
+      pagar:              json['pagar'] as String?,
+      sumberAir:          json['sumber_air'] as String?,
+      statusHunian:       json['status_hunian'] as String?,
+      // ----------------------------------------------
     );
   }
 
@@ -160,6 +195,17 @@ class FormulirModel {
     'material_lantai':  materialLantai,
     'fasilitas':        fasilitas,
     'catatan':          catatan,
+    // --- NEW FIELDS (Untuk dikirim ke API) ---
+    'penggunaan_bangunan': penggunaanBangunan,
+    'status_kepemilikan':  statusKepemilikan,
+    'tahun_renovasi':      tahunRenovasi,
+    'daya_listrik':        dayaListrik,
+    'akses_jalan':         aksesJalan,
+    'lebar_jalan':         lebarJalan,
+    'pagar':               pagar,
+    'sumber_air':          sumberAir,
+    'status_hunian':       statusHunian,
+    // -----------------------------------------
   };
 }
 

@@ -5,7 +5,8 @@
 
 import 'package:flutter/material.dart';
 import 'config/app_theme.dart';
-import 'screens/splash_screen.dart';
+import 'screens/formulir_screen.dart';
+import 'models/formulir_model.dart';
 
 void main() {
   // Pastikan Flutter sudah ter-initialize sebelum runApp
@@ -19,12 +20,25 @@ class GeoSurveyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title:         'GeoSurvey PBB',
+      title: 'GeoSurvey PBB',
       debugShowCheckedModeBanner: false,
-      theme:         AppTheme.lightTheme,
+      theme: AppTheme.lightTheme,
 
-      // Mulai dari SplashScreen yang akan cek status login
-      home: const SplashScreen(),
+      // Bypass login untuk testing FormulirScreen
+      home: FormulirScreen(
+        task: const SurveyTask(
+          id: 1,
+          nop: '1234567890',
+          namaWp: 'Dummy Wajib Pajak',
+          alamatOp: 'Jl. Dummy Alamat No. 1',
+          kdKecamatan: '01',
+          kdKelurahan: '01',
+          kdBlok: '001',
+          noUrut: '0001',
+          kdJnsOp: '0',
+          statusTask: 'pending',
+        ),
+      ),
     );
   }
 }
