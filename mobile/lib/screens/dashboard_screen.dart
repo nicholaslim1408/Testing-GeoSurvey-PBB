@@ -418,22 +418,14 @@ class _DashboardScreenState extends State<DashboardScreen>
             Expanded(child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Halo, ${_user?.fullName ?? 'User'}!',
+                Text('Halo, ${_user?.fullName ?? 'User'}! 👋',
                     style: GoogleFonts.plusJakartaSans(
-                        color: Colors.white, fontSize: 13,
-                        fontWeight: FontWeight.w600)),
-                Container(
-                  margin:  const EdgeInsets.only(top: 2),
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 8, vertical: 2),
-                  decoration: BoxDecoration(
-                    color:        Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: Text(_user?.role ?? 'enumerator',
-                      style: GoogleFonts.plusJakartaSans(
-                          color: Colors.white, fontSize: 10)),
-                ),
+                        fontSize: 24, fontWeight: FontWeight.w800,
+                        color: AppColors.textPrimary)),
+                const SizedBox(height: 4),
+                Text('Selamat datang di GeoSurvey PBB',
+                    style: GoogleFonts.plusJakartaSans(
+                        color: AppColors.textSecondary)),
               ],
             )),
             // Refresh button
@@ -445,63 +437,14 @@ class _DashboardScreenState extends State<DashboardScreen>
           ]),
           const SizedBox(height: 28),
 
-        // Nav items
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            child: Column(
-              children: navItems.asMap().entries.map((entry) {
-                final i    = entry.key;
-                final item = entry.value;
-                final isActive     = _selectedNav == i;
-                final isComingSoon = item.$3;
-
-                return Container(
-                  margin: const EdgeInsets.only(bottom: 4),
-                  child: ListTile(
-                    dense:   true,
-                    leading: Icon(item.$1,
-                        size:  20,
-                        color: isActive ? Colors.white : Colors.white60),
-                    title: Text(item.$2,
-                        style: GoogleFonts.plusJakartaSans(
-                            color: isActive
-                                ? Colors.white
-                                : Colors.white70,
-                            fontSize:   13,
-                            fontWeight: isActive
-                                ? FontWeight.w600
-                                : FontWeight.w400)),
-                    trailing: isComingSoon
-                        ? Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color:        Colors.white.withOpacity(0.15),
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                            child: const Text('Soon',
-                                style: TextStyle(
-                                    color: Colors.white60, fontSize: 9)),
-                          )
-                        : null,
-                    tileColor: isActive
-                        ? Colors.white.withOpacity(0.15)
-                        : Colors.transparent,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10)),
-                    onTap: isComingSoon
-                        ? null
-                        : () {
-                            setState(() => _selectedNav = i);
-                            item.$4(); // panggil onTap masing-masing
-                          },
-                  ),
-                );
-              }).toList(),
-            ),
-          ),
-        ),
+          // ── Statistik Survey ────────────────────────────────
+          Text('Statistik Survey',
+              style: GoogleFonts.plusJakartaSans(
+                  fontSize: 16, fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary)),
+          const SizedBox(height: 12),
+          _buildStatsRow(),
+          const SizedBox(height: 28),
 
           // ── Quick Action ──────────────────────────────────
           Text('Aksi Cepat',
@@ -512,59 +455,19 @@ class _DashboardScreenState extends State<DashboardScreen>
           _buildQuickActions(),
           const SizedBox(height: 28),
 
-  // ── Main Content ───────────────────────────────────────────
-  Widget _buildContent() {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.all(32),
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Expanded(child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text('Halo, ${_user?.fullName ?? 'User'}! 👋',
-                  style: GoogleFonts.plusJakartaSans(
-                      fontSize: 24, fontWeight: FontWeight.w800,
-                      color: AppColors.textPrimary)),
-              const SizedBox(height: 4),
-              Text('Selamat datang di GeoSurvey PBB',
-                  style: GoogleFonts.plusJakartaSans(
-                      color: AppColors.textSecondary)),
-            ],
-          )),
-          IconButton(
-            onPressed: _loadStats,
-            icon: const Icon(Icons.refresh_rounded,
-                color: AppColors.textSecondary),
-          ),
+          // ── Phase Status ──────────────────────────────────
+          Text('Status Pengembangan',
+              style: GoogleFonts.plusJakartaSans(
+                  fontSize: 16, fontWeight: FontWeight.w700,
+                  color: AppColors.textPrimary)),
+          const SizedBox(height: 12),
+          _buildPhaseCards(),
         ]),
-        const SizedBox(height: 28),
-
-        Text('Statistik Survey',
-            style: GoogleFonts.plusJakartaSans(
-                fontSize: 16, fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary)),
-        const SizedBox(height: 12),
-        _buildStatsRow(),
-        const SizedBox(height: 28),
-
-        Text('Aksi Cepat',
-            style: GoogleFonts.plusJakartaSans(
-                fontSize: 16, fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary)),
-        const SizedBox(height: 12),
-        _buildQuickActions(),
-        const SizedBox(height: 28),
-
-        Text('Status Pengembangan',
-            style: GoogleFonts.plusJakartaSans(
-                fontSize: 16, fontWeight: FontWeight.w700,
-                color: AppColors.textPrimary)),
-        const SizedBox(height: 12),
-        _buildPhaseCards(),
-      ]),
+      ),
     );
   }
 
+  // ── Stats Row ──────────────────────────────────────────────
   Widget _buildStatsRow() {
     final cards = [
       ('Total Task',  _stats?.total,      AppColors.primary,       Icons.assignment_rounded),
@@ -572,31 +475,45 @@ class _DashboardScreenState extends State<DashboardScreen>
       ('Proses',      _stats?.inProgress, AppColors.warning,       Icons.pending_rounded),
       ('Selesai',     _stats?.completed,  AppColors.accent,        Icons.check_circle_rounded),
     ];
-    return Wrap(spacing: 14, runSpacing: 14, children: cards.map((c) {
-      return Container(
-        width:      170,
-        padding:    const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.border),
-          boxShadow: [BoxShadow(
-            color: Colors.black.withOpacity(0.03),
-            blurRadius: 8, offset: const Offset(0, 2),
-          )],
-        ),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Icon(c.$4, color: c.$3, size: 22),
-          const SizedBox(height: 10),
-          _isLoadingStats
-              ? Container(
-                  width: 40, height: 28,
-                  decoration: BoxDecoration(
-                    color: AppColors.border,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                )
-              : Text('${c.$2 ?? 0}',
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const spacing = 14.0;
+        final columns = constraints.maxWidth >= 700 ? 4
+                      : constraints.maxWidth >= 500 ? 3
+                      : 2;
+        final cardWidth = (constraints.maxWidth - spacing * (columns - 1)) / columns;
+
+        return Wrap(spacing: spacing, runSpacing: spacing, children: cards.map((c) {
+          return Container(
+            width:      cardWidth,
+            padding:    const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color:        AppColors.surface,
+              borderRadius: BorderRadius.circular(14),
+              border:       Border.all(color: AppColors.border),
+              boxShadow: [BoxShadow(
+                color: Colors.black.withOpacity(0.03),
+                blurRadius: 8, offset: const Offset(0, 2),
+              )],
+            ),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Icon(c.$4, color: c.$3, size: 22),
+              const SizedBox(height: 10),
+              _isLoadingStats
+                  ? Container(
+                      width: 40, height: 28,
+                      decoration: BoxDecoration(
+                        color: AppColors.border,
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                    )
+                  : Text('${c.$2 ?? 0}',
+                      style: GoogleFonts.plusJakartaSans(
+                          fontSize: 28, fontWeight: FontWeight.w800,
+                          color: AppColors.textPrimary)),
+              const SizedBox(height: 2),
+              Text(c.$1,
                   style: GoogleFonts.plusJakartaSans(
                       fontSize: 12, color: AppColors.textSecondary)),
             ]),
@@ -606,34 +523,46 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
+  // ── Quick Actions ──────────────────────────────────────────
   Widget _buildQuickActions() {
-    return Wrap(spacing: 14, runSpacing: 14, children: [
-      _buildActionCard(
-        icon:  Icons.assignment_add,
-        label: 'Isi Formulir',
-        desc:  'Mulai pendataan properti',
-        color: AppColors.primary,
-        onTap: () => Navigator.push(context,
-          MaterialPageRoute(builder: (_) => const TaskListScreen()),
-        ).then((_) => _loadStats()),
-      ),
-      _buildActionCard(
-        icon:  Icons.qr_code_scanner_rounded,
-        label: 'Scan NOP',
-        desc:  'Scan barcode/QR properti',
-        color: AppColors.accent,
-        onTap: () => Navigator.push(context,
-          MaterialPageRoute(builder: (_) => const ScannerScreen()),
-        ).then((_) => _loadStats()),
-      ),
-    ]);
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const spacing = 14.0;
+        final columns = constraints.maxWidth >= 500 ? 3 : 2;
+        final cardWidth = (constraints.maxWidth - spacing * (columns - 1)) / columns;
+
+        return Wrap(spacing: spacing, runSpacing: spacing, children: [
+          _buildActionCard(
+            width:   cardWidth,
+            icon:    Icons.assignment_add,
+            label:   'Isi Formulir',
+            desc:    'Mulai pendataan properti',
+            color:   AppColors.primary,
+            onTap: () => Navigator.push(context,
+              MaterialPageRoute(builder: (_) => const TaskListScreen()),
+            ).then((_) => _loadStats()),
+          ),
+          _buildActionCard(
+            width:   cardWidth,
+            icon:    Icons.qr_code_scanner_rounded,
+            label:   'Scan NOP',
+            desc:    'Scan barcode/QR properti',
+            color:   AppColors.accent,
+            onTap: () => Navigator.push(context,
+              MaterialPageRoute(builder: (_) => const ScannerScreen()),
+            ).then((_) => _loadStats()),
+          ),
+        ]);
+      },
+    );
   }
 
   Widget _buildActionCard({
-    required IconData     icon,
-    required String       label,
-    required String       desc,
-    required Color        color,
+    required double    width,
+    required IconData  icon,
+    required String    label,
+    required String    desc,
+    required Color     color,
     required VoidCallback onTap,
   }) {
     return InkWell(
@@ -674,39 +603,35 @@ class _DashboardScreenState extends State<DashboardScreen>
     );
   }
 
+  // ── Phase Cards ────────────────────────────────────────────
   Widget _buildPhaseCards() {
     final phases = [
       ('Phase 1', 'Setup & Auth',   Icons.lock_rounded,           true),
       ('Phase 2', 'Formulir',       Icons.assignment_rounded,     true),
-      ('Phase 3', 'Scanner NOP',    Icons.qr_code_rounded,        true),  // ← selesai
+      ('Phase 3', 'Scanner NOP',    Icons.qr_code_rounded,        true),
       ('Phase 4', 'Kamera & GPS',   Icons.camera_alt_rounded,     false),
       ('Phase 5', 'Citra Satelit',  Icons.satellite_alt_rounded,  false),
     ];
-    return Wrap(spacing: 14, runSpacing: 14, children: phases.map((p) {
-      final isDone = p.$4;
-      return Container(
-        width:      180,
-        padding:    const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color:        isDone
-              ? AppColors.accent.withOpacity(0.08)
-              : AppColors.surface,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: isDone
-                ? AppColors.accent.withOpacity(0.3)
-                : AppColors.border,
-          ),
-        ),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            Icon(p.$3,
-                size:  18,
-                color: isDone ? AppColors.accent : AppColors.textSecondary),
-            const Spacer(),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-              decoration: BoxDecoration(
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const spacing = 14.0;
+        final columns = constraints.maxWidth >= 700 ? 4
+                      : constraints.maxWidth >= 500 ? 3
+                      : 2;
+        final cardWidth = (constraints.maxWidth - spacing * (columns - 1)) / columns;
+
+        return Wrap(spacing: spacing, runSpacing: spacing, children: phases.map((p) {
+          final isDone = p.$4;
+          return Container(
+            width:      cardWidth,
+            padding:    const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color:        isDone
+                  ? AppColors.accent.withOpacity(0.08)
+                  : AppColors.surface,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
                 color: isDone
                     ? AppColors.accent.withOpacity(0.3)
                     : AppColors.border,
