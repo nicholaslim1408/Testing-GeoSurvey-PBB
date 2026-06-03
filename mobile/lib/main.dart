@@ -19,9 +19,9 @@ class GeoSurveyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title:         'GeoSurvey PBB',
+      title: 'GeoSurvey PBB',
       debugShowCheckedModeBanner: false,
-      theme:         AppTheme.lightTheme,
+      theme: AppTheme.lightTheme,
 
       // Mulai dari SplashScreen yang akan cek status login
       home: const SplashScreen(),

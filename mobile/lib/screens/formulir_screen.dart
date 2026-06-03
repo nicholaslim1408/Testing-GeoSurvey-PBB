@@ -29,6 +29,11 @@ class _FormulirScreenState extends State<FormulirScreen> {
   final _jumlahLantaiCtrl = TextEditingController(text: '1');
   final _catatanCtrl      = TextEditingController();
 
+  // --- NEW CONTROLLERS ---
+  final _tahunRenovasiCtrl = TextEditingController();
+  final _lebarJalanCtrl    = TextEditingController();
+  // -----------------------
+
   // ── Dropdown values ────────────────────────────────────────
   String? _jenisBumi;
   String? _kondisiTanah;
@@ -37,10 +42,18 @@ class _FormulirScreenState extends State<FormulirScreen> {
   String? _materialAtap;
   String? _materialLantai;
 
+  // --- NEW DROPDOWN VALUES ---
+  String? _penggunaanBangunan;
+  String? _statusKepemilikan;
+  String? _dayaListrik;
+  String? _aksesJalan;
+  String? _pagar;
+  String? _sumberAir;
+  String? _statusHunian;
+  // ---------------------------
+
   // ── Fasilitas (multi-select) ───────────────────────────────
   final _fasilitasOptions = [
-    ('listrik',    'Listrik PLN',    Icons.electrical_services_rounded),
-    ('air_pdam',   'Air PDAM',       Icons.water_drop_rounded),
     ('telepon',    'Telepon',        Icons.phone_rounded),
     ('internet',   'Internet',       Icons.wifi_rounded),
     ('gas',        'Gas',            Icons.local_fire_department_rounded),
@@ -65,6 +78,16 @@ class _FormulirScreenState extends State<FormulirScreen> {
   final _materialAtapOpts      = ['Beton', 'Genteng', 'Seng', 'Asbes', 'Sirap', 'Lainnya'];
   final _materialLantaiOpts    = ['Keramik', 'Granit', 'Marmer', 'Semen', 'Kayu', 'Tanah', 'Lainnya'];
 
+  // --- NEW OPTIONS ---
+  final _penggunaanBangunanOpts = ['Rumah Tinggal', 'Ruko', 'Toko', 'Kantor', 'Gudang', 'Industri', 'Kos-kosan', 'Hotel', 'Restoran', 'Lainnya'];
+  final _statusKepemilikanOpts  = ['Milik Sendiri', 'Sewa', 'Kontrak', 'Hak Pakai', 'Lainnya'];
+  final _dayaListrikOpts        = ['450 VA', '900 VA', '1300 VA', '2200 VA', '> 2200 VA'];
+  final _aksesJalanOpts         = ['Aspal', 'Beton', 'Paving', 'Tanah'];
+  final _pagarOpts              = ['Tidak Ada', 'Besi', 'Beton', 'Kombinasi'];
+  final _sumberAirOpts          = ['PDAM', 'Sumur Bor', 'Sumur Gali', 'Air Isi Ulang', 'Lainnya'];
+  final _statusHunianOpts       = ['Dihuni', 'Kosong', 'Disewakan'];
+  // -------------------
+
   @override
   void initState() {
     super.initState();
@@ -78,6 +101,12 @@ class _FormulirScreenState extends State<FormulirScreen> {
     _luasBangunanCtrl.dispose();
     _jumlahLantaiCtrl.dispose();
     _catatanCtrl.dispose();
+    
+    // --- NEW FIELDS ---
+    _tahunRenovasiCtrl.dispose();
+    _lebarJalanCtrl.dispose();
+    // ------------------
+    
     super.dispose();
   }
 
@@ -103,12 +132,32 @@ class _FormulirScreenState extends State<FormulirScreen> {
         _tahunDibangunCtrl.text = f.tahunDibangun.toString();
       }
       _catatanCtrl.text       = f.catatan ?? '';
+      
+      // --- NEW FIELDS TEXT CONTROLLERS ---
+      if (f.tahunRenovasi != null) {
+        _tahunRenovasiCtrl.text = f.tahunRenovasi.toString();
+      }
+      if (f.lebarJalan != null) {
+        _lebarJalanCtrl.text = f.lebarJalan.toString();
+      }
+      // -----------------------------------
+      
       _jenisBumi       = f.jenisBumi;
       _kondisiTanah    = f.kondisiTanah;
       _kondisiBangunan = f.kondisiBangunan;
       _materialDinding = f.materialDinding;
       _materialAtap    = f.materialAtap;
       _materialLantai  = f.materialLantai;
+      
+      // --- NEW FIELDS DROPDOWN VALUES ---
+      _penggunaanBangunan = f.penggunaanBangunan;
+      _statusKepemilikan  = f.statusKepemilikan;
+      _dayaListrik        = f.dayaListrik;
+      _aksesJalan         = f.aksesJalan;
+      _pagar              = f.pagar;
+      _sumberAir          = f.sumberAir;
+      _statusHunian       = f.statusHunian;
+      // ----------------------------------
       _selectedFasilitas.addAll(f.fasilitas);
       setState(() {});
     }
@@ -135,6 +184,18 @@ class _FormulirScreenState extends State<FormulirScreen> {
       materialLantai:  _materialLantai,
       fasilitas:       _selectedFasilitas.toList(),
       catatan:         _catatanCtrl.text.trim(),
+      
+      // --- NEW FIELDS ---
+      penggunaanBangunan: _penggunaanBangunan,
+      statusKepemilikan:  _statusKepemilikan,
+      tahunRenovasi:      int.tryParse(_tahunRenovasiCtrl.text),
+      dayaListrik:        _dayaListrik,
+      aksesJalan:         _aksesJalan,
+      lebarJalan:         double.tryParse(_lebarJalanCtrl.text),
+      pagar:              _pagar,
+      sumberAir:          _sumberAir,
+      statusHunian:       _statusHunian,
+      // ------------------
     );
 
     final result = await FormulirService.saveFormulir(formulir);
@@ -350,10 +411,46 @@ class _FormulirScreenState extends State<FormulirScreen> {
               onChanged: (v) => setState(() => _kondisiTanah = v),
               labels:   {'baik': 'Baik', 'sedang': 'Sedang', 'buruk': 'Buruk'},
             ),
+            
+            // --- NEW UI FIELDS (Tanah) ---
+            const SizedBox(height: 12),
+            _buildDropdown(
+              value:    _statusKepemilikan,
+              label:    'Status Kepemilikan',
+              items:    _statusKepemilikanOpts,
+              onChanged: (v) => setState(() => _statusKepemilikan = v),
+            ),
+            const SizedBox(height: 12),
+            Row(children: [
+              Expanded(
+                child: _buildDropdown(
+                  value:    _aksesJalan,
+                  label:    'Akses Jalan',
+                  items:    _aksesJalanOpts,
+                  onChanged: (v) => setState(() => _aksesJalan = v),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildNumberField(
+                  controller: _lebarJalanCtrl,
+                  label:      'Lebar Jalan (m)',
+                  hint:       'Contoh: 4.5',
+                ),
+              ),
+            ]),
+            // -----------------------------
             const SizedBox(height: 20),
 
             // Section: Data Bangunan
             _buildSectionHeader('🏠 Data Bangunan', 'Informasi fisik bangunan'),
+            const SizedBox(height: 12),
+            _buildDropdown(
+              value:    _penggunaanBangunan,
+              label:    'Penggunaan Bangunan',
+              items:    _penggunaanBangunanOpts,
+              onChanged: (v) => setState(() => _penggunaanBangunan = v),
+            ),
             const SizedBox(height: 12),
             _buildNumberField(
               controller: _luasBangunanCtrl,
@@ -384,13 +481,46 @@ class _FormulirScreenState extends State<FormulirScreen> {
               ),
             ]),
             const SizedBox(height: 12),
-            _buildDropdown(
-              value:    _kondisiBangunan,
-              label:    'Kondisi Bangunan',
-              items:    _kondisiOptions,
-              onChanged: (v) => setState(() => _kondisiBangunan = v),
-              labels:   {'baik': 'Baik', 'sedang': 'Sedang', 'buruk': 'Buruk'},
-            ),
+            Row(children: [
+              Expanded(
+                child: _buildDropdown(
+                  value:    _kondisiBangunan,
+                  label:    'Kondisi Bangunan',
+                  items:    _kondisiOptions,
+                  onChanged: (v) => setState(() => _kondisiBangunan = v),
+                  labels:   {'baik': 'Baik', 'sedang': 'Sedang', 'buruk': 'Buruk'},
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildNumberField(
+                  controller: _tahunRenovasiCtrl,
+                  label:      'Tahun Renovasi',
+                  hint:       'Contoh: 2023',
+                  isInt:      true,
+                ),
+              ),
+            ]),
+            const SizedBox(height: 12),
+            Row(children: [
+              Expanded(
+                child: _buildDropdown(
+                  value:    _dayaListrik,
+                  label:    'Daya Listrik',
+                  items:    _dayaListrikOpts,
+                  onChanged: (v) => setState(() => _dayaListrik = v),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildDropdown(
+                  value:    _statusHunian,
+                  label:    'Status Hunian',
+                  items:    _statusHunianOpts,
+                  onChanged: (v) => setState(() => _statusHunian = v),
+                ),
+              ),
+            ]),
             const SizedBox(height: 20),
 
             // Section: Material
@@ -416,6 +546,29 @@ class _FormulirScreenState extends State<FormulirScreen> {
               items:    _materialLantaiOpts,
               onChanged: (v) => setState(() => _materialLantai = v),
             ),
+            
+            // --- NEW UI FIELDS (Material & Fasilitas Ekstra) ---
+            const SizedBox(height: 12),
+            Row(children: [
+              Expanded(
+                child: _buildDropdown(
+                  value:    _pagar,
+                  label:    'Jenis Pagar',
+                  items:    _pagarOpts,
+                  onChanged: (v) => setState(() => _pagar = v),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: _buildDropdown(
+                  value:    _sumberAir,
+                  label:    'Sumber Air',
+                  items:    _sumberAirOpts,
+                  onChanged: (v) => setState(() => _sumberAir = v),
+                ),
+              ),
+            ]),
+            // --------------------------------------------------
             const SizedBox(height: 20),
 
             // Section: Fasilitas
