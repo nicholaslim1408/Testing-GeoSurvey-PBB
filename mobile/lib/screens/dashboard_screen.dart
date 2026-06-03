@@ -13,7 +13,7 @@ import '../models/user_model.dart';
 import '../models/formulir_model.dart';
 import 'login_screen.dart';
 import 'task_list_screen.dart';
-import 'scanner_screen.dart'; // ← BARU Phase 3
+import 'scanner_screen.dart'; 
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -205,8 +205,6 @@ class _DashboardScreenState extends State<DashboardScreen>
           MaterialPageRoute(builder: (_) => const ScannerScreen()),
         ).then((_) => _loadStats());
       }),
-      (Icons.camera_alt_rounded,      'Kamera & GPS',       true,  () {}),
-      (Icons.satellite_alt_rounded,   'Citra Satelit',      true,  () {}),
     ];
 
     return SafeArea(
@@ -446,15 +444,6 @@ class _DashboardScreenState extends State<DashboardScreen>
                   color: AppColors.textPrimary)),
           const SizedBox(height: 12),
           _buildQuickActions(),
-          const SizedBox(height: 28),
-
-          // ── Phase Status ──────────────────────────────────
-          Text('Status Pengembangan',
-              style: GoogleFonts.plusJakartaSans(
-                  fontSize: 16, fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary)),
-          const SizedBox(height: 12),
-          _buildPhaseCards(),
         ]),
       ),
     );
@@ -593,77 +582,6 @@ class _DashboardScreenState extends State<DashboardScreen>
                   fontSize: 12, color: AppColors.textSecondary)),
         ]),
       ),
-    );
-  }
-
-  // ── Phase Cards ────────────────────────────────────────────
-  Widget _buildPhaseCards() {
-    final phases = [
-      ('Phase 1', 'Setup & Auth',   Icons.lock_rounded,           true),
-      ('Phase 2', 'Formulir',       Icons.assignment_rounded,     true),
-      ('Phase 3', 'Scanner NOP',    Icons.qr_code_rounded,        true),
-      ('Phase 4', 'Kamera & GPS',   Icons.camera_alt_rounded,     false),
-      ('Phase 5', 'Citra Satelit',  Icons.satellite_alt_rounded,  false),
-    ];
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        const spacing = 14.0;
-        final columns = constraints.maxWidth >= 700 ? 4
-                      : constraints.maxWidth >= 500 ? 3
-                      : 2;
-        final cardWidth = (constraints.maxWidth - spacing * (columns - 1)) / columns;
-
-        return Wrap(spacing: spacing, runSpacing: spacing, children: phases.map((p) {
-          final isDone = p.$4;
-          return Container(
-            width:      cardWidth,
-            padding:    const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color:        isDone
-                  ? AppColors.accent.withOpacity(0.08)
-                  : AppColors.surface,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: isDone
-                    ? AppColors.accent.withOpacity(0.3)
-                    : AppColors.border,
-              ),
-            ),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(children: [
-                Icon(p.$3,
-                    size:  18,
-                    color: isDone ? AppColors.accent : AppColors.textSecondary),
-                const Spacer(),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: isDone
-                        ? AppColors.accent.withOpacity(0.15)
-                        : AppColors.surfaceVariant,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(isDone ? '✓ Done' : 'Soon',
-                      style: GoogleFonts.plusJakartaSans(
-                          fontSize: 10, fontWeight: FontWeight.w600,
-                          color: isDone
-                              ? AppColors.accent
-                              : AppColors.textSecondary)),
-                ),
-              ]),
-              const SizedBox(height: 10),
-              Text(p.$1,
-                  style: GoogleFonts.plusJakartaSans(
-                      fontSize: 10, color: AppColors.textSecondary)),
-              Text(p.$2,
-                  style: GoogleFonts.plusJakartaSans(
-                      fontSize: 13, fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary)),
-            ]),
-          );
-        }).toList());
-      },
     );
   }
 }

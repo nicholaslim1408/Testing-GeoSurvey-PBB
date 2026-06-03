@@ -11,6 +11,13 @@ import '../config/app_theme.dart';
 import '../models/formulir_model.dart';
 import '../services/formulir_service.dart';
 
+import 'dart:io';
+import 'package:geolocator/geolocator.dart';
+import '../models/foto_bangunan_model.dart';
+import '../utils/database_helper.dart';
+import 'camera_preview_screen.dart';
+import 'gps_reference_screen.dart';
+
 class FormulirScreen extends StatefulWidget {
   final SurveyTask task;
   const FormulirScreen({super.key, required this.task});
@@ -88,10 +95,24 @@ class _FormulirScreenState extends State<FormulirScreen> {
   final _statusHunianOpts       = ['Dihuni', 'Kosong', 'Disewakan'];
   // -------------------
 
+  // --- STATE FOTO ---
+  final Map<String, FotoBangunanModel> _photos = {};
+
   @override
   void initState() {
     super.initState();
     _loadExistingFormulir();
+    _loadLocalPhotos();
+  }
+
+  Future<void> _loadLocalPhotos() async {
+    final photos = await DatabaseHelper.instance.getPhotosForTask(widget.task.id);
+    if (!mounted) return;
+    setState(() {
+      for (var p in photos) {
+        _photos[p.klasifikasi] = p;
+      }
+    });
   }
 
   @override
@@ -210,6 +231,92 @@ class _FormulirScreenState extends State<FormulirScreen> {
         _errorMsg = result.message;
       }
     });
+  }
+
+  // ── Ambil Foto & GPS ────────────────────────────────────────
+  Future<void> _takePhoto(String klasifikasi) async {
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('GPS harus dinyalakan untuk mengambil foto.')),
+        );
+      }
+      return;
+    }
+
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) return;
+    }
+    if (permission == LocationPermission.deniedForever) return;
+
+    // Buka Custom Camera UI
+    final String? photoPath = await Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const CameraPreviewScreen()),
+    );
+    
+    if (photoPath == null) return; // User membatalkan foto
+
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Mencari lokasi GPS...')),
+      );
+    }
+
+    Position pos = await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.bestForNavigation,
+    );
+
+    _showPhotoConfirmation(photoPath, pos.latitude, pos.longitude, klasifikasi);
+  }
+
+  void _showPhotoConfirmation(String path, double lat, double lng, String klasifikasi) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: Text('Konfirmasi Foto ($klasifikasi)', style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.bold)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.file(File(path), height: 200, fit: BoxFit.cover),
+            const SizedBox(height: 10),
+            Text('Lat: $lat\nLng: $lng', style: const TextStyle(fontSize: 12)),
+            const SizedBox(height: 10),
+            Text('Apakah foto sudah cocok dan jelas?', style: GoogleFonts.plusJakartaSans(fontSize: 14)),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _takePhoto(klasifikasi); // Foto Salah -> Ambil Ulang
+            },
+            child: const Text('Foto Salah (Ulang)'),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              Navigator.pop(ctx);
+              // Simpan ke SQLite
+              final f = FotoBangunanModel(
+                taskId: widget.task.id,
+                klasifikasi: klasifikasi.toLowerCase(),
+                filePath: path,
+                latitude: lat,
+                longitude: lng,
+                createdAt: DateTime.now(),
+              );
+              await DatabaseHelper.instance.create(f);
+              await _loadLocalPhotos(); // Refresh UI
+            },
+            child: const Text('Ya, Simpan'),
+          ),
+        ],
+      ),
+    );
   }
 
   // ── Submit (selesai) ──────────────────────────────────────
@@ -592,11 +699,110 @@ class _FormulirScreenState extends State<FormulirScreen> {
                 alignLabelWithHint: true,
               ),
             ),
+            const SizedBox(height: 20),
+
+            // Section: Foto Bangunan & GPS
+            _buildSectionHeader('Dokumentasi Foto & Lokasi', 'Ambil gambar 4 sisi bangunan dan cek GPS'),
+            const SizedBox(height: 12),
+            
+            // Tombol GPS
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                icon: const Icon(Icons.map_outlined),
+                label: const Text('Cek Referensi GPS'),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  side: const BorderSide(color: AppColors.primary),
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => GpsReferenceScreen(
+                        targetLat: widget.task.latitude ?? -6.200000,
+                        targetLng: widget.task.longitude ?? 106.816666,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            const SizedBox(height: 16),
+            
+            _buildPhotoGrid(),
 
             const SizedBox(height: 100), // ruang untuk bottom bar
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildPhotoGrid() {
+    final slots = ['Depan', 'Belakang', 'Kiri', 'Kanan'];
+    return GridView.count(
+      crossAxisCount: 2,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      crossAxisSpacing: 10,
+      mainAxisSpacing: 10,
+      children: slots.map((slot) {
+        final key = slot.toLowerCase();
+        final p = _photos[key];
+        
+        if (p != null) {
+          return InkWell(
+            onTap: () => _takePhoto(slot),
+            child: Container(
+              decoration: BoxDecoration(
+                border: Border.all(color: AppColors.primary, width: 2),
+                borderRadius: BorderRadius.circular(8),
+                image: DecorationImage(
+                  image: FileImage(File(p.filePath)),
+                  fit: BoxFit.cover,
+                ),
+              ),
+              child: Align(
+                alignment: Alignment.bottomCenter,
+                child: Container(
+                  width: double.infinity,
+                  color: Colors.black54,
+                  padding: const EdgeInsets.symmetric(vertical: 4),
+                  child: Text(
+                    slot,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                  ),
+                ),
+              ),
+            ),
+          );
+        }
+
+        return InkWell(
+          onTap: () => _takePhoto(slot),
+          child: Container(
+            decoration: BoxDecoration(
+              border: Border.all(color: Colors.grey, style: BorderStyle.solid),
+              borderRadius: BorderRadius.circular(8),
+              color: Colors.grey[100],
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.camera_alt_outlined, size: 32, color: Colors.grey),
+                const SizedBox(height: 4),
+                Text('Foto $slot', style: const TextStyle(color: Colors.grey, fontSize: 12, fontWeight: FontWeight.bold)),
+              ],
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 
