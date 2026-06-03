@@ -128,10 +128,10 @@ class AuthService {
   static String _parseDioError(DioException e) {
     if (e.type == DioExceptionType.connectionTimeout ||
         e.type == DioExceptionType.receiveTimeout) {
-      return 'Koneksi timeout. Periksa jaringan kamu.';
+      return 'Koneksi timeout. Periksa jaringan anda.';
     }
     if (e.type == DioExceptionType.connectionError) {
-      return 'Tidak bisa terhubung ke server. Pastikan backend sudah berjalan.';
+      return 'Tidak dapat terhubung ke server.';
     }
     // Error dari response server (400, 401, 403, 409, 500)
     if (e.response != null && e.response!.data != null) {
