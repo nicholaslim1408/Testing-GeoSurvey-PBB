@@ -132,6 +132,7 @@ class AuthService {
     }
     if (e.type == DioExceptionType.connectionError) {
       return 'Tidak dapat terhubung ke server.';
+
     }
     // Error dari response server (400, 401, 403, 409, 500)
     if (e.response != null && e.response!.data != null) {
