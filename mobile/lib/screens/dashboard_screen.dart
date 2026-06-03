@@ -195,13 +195,12 @@ class _DashboardScreenState extends State<DashboardScreen>
   Widget _buildSidebar() {
     // (icon, label, isComingSoon, onTap)
     final navItems = [
-      (Icons.dashboard_rounded,       'Dashboard',          false, () {}),
       (Icons.assignment_rounded,      'Formulir Pendataan', false, () {
         Navigator.push(context,
           MaterialPageRoute(builder: (_) => const TaskListScreen()),
         ).then((_) => _loadStats());
       }),
-      (Icons.qr_code_scanner_rounded, 'Scanner NOP',        false, () {  // ← aktif Phase 3
+      (Icons.qr_code_scanner_rounded, 'Scanner NOP',        false, () {
         Navigator.push(context,
           MaterialPageRoute(builder: (_) => const ScannerScreen()),
         ).then((_) => _loadStats());
@@ -355,14 +354,8 @@ class _DashboardScreenState extends State<DashboardScreen>
                         borderRadius: BorderRadius.circular(10)),
                     onTap: isComingSoon ? null : () {
                       setState(() => _selectedNav = i);
-                      _closeSidebar(); // Auto-close sidebar after navigation
-                      if (i == 1) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) => const TaskListScreen()),
-                        ).then((_) => _loadStats()); // refresh stats setelah kembali
-                      }
+                      _closeSidebar();
+                      item.$4(); // panggil onTap masing-masing item
                     },
                   ),
                 );
@@ -418,7 +411,7 @@ class _DashboardScreenState extends State<DashboardScreen>
             Expanded(child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Halo, ${_user?.fullName ?? 'User'}! 👋',
+                Text('Halo, ${_user?.fullName ?? 'User'}!',
                     style: GoogleFonts.plusJakartaSans(
                         fontSize: 24, fontWeight: FontWeight.w800,
                         color: AppColors.textPrimary)),
