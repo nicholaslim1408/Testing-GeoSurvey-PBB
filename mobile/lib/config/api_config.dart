@@ -1,6 +1,6 @@
 // lib/config/api_config.dart
 // ============================================================
-// UPDATE Phase 2: tambah endpoint formulir
+// UPDATE Phase 3: tambah endpoint search by NOP
 // ============================================================
 
 class ApiConfig {
@@ -18,7 +18,11 @@ class ApiConfig {
   static const String formulirSave   = '$baseUrl/api/formulir/save';
   static const String formulirSubmit = '$baseUrl/api/formulir/submit';
 
+  // ── Scanner Endpoints (Phase 3) ───────────────────────────
+  // GET /api/formulir/nop/:nop → cari task berdasarkan NOP hasil scan
+  static const String formulirByNop = '$baseUrl/api/formulir/nop';
+
   // ── Timeout ───────────────────────────────────────────────
-  static const Duration connectTimeout = Duration(seconds: 60);
-  static const Duration receiveTimeout = Duration(seconds: 65);
+  static const Duration connectTimeout = Duration(seconds: 10);
+  static const Duration receiveTimeout = Duration(seconds: 15);
 }

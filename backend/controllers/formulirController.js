@@ -1,13 +1,12 @@
 // controllers/formulirController.js
 // ============================================================
-// Logika bisnis untuk Formulir Pendataan (Phase 2)
+// UPDATE Phase 3: tambah fungsi getTaskByNop untuk Scanner
 // ============================================================
 
 const { pool } = require('../config/db');
 
 // ─────────────────────────────────────────────────────────────
 // GET ALL TASKS  —  GET /api/formulir/tasks
-// Ambil semua survey task (bisa filter by status)
 // ─────────────────────────────────────────────────────────────
 const getAllTasks = async (req, res) => {
   try {
@@ -16,32 +15,27 @@ const getAllTasks = async (req, res) => {
     let query = `
       SELECT
         t.*,
-        u.full_name   AS enumerator_name,
-        f.id          AS formulir_id,
-        f.status_sync AS formulir_status
+        u.full_name    AS enumerator_name,
+        f.id           AS formulir_id,
+        f.status_sync  AS formulir_status
       FROM survey_tasks t
-      LEFT JOIN users             u ON t.assigned_to     = u.id
-      LEFT JOIN formulir_pendataan f ON t.id             = f.task_id
+      LEFT JOIN users              u ON t.assigned_to = u.id
+      LEFT JOIN formulir_pendataan f ON t.id          = f.task_id
     `;
 
-    const params = [];
-    const conditions = [];
+    const params      = [];
+    const conditions  = [];
 
     if (status) {
       conditions.push('t.status_task = ?');
       params.push(status);
     }
-
     if (search) {
       conditions.push('(t.nop LIKE ? OR t.nama_wp LIKE ? OR t.alamat_op LIKE ?)');
       const like = `%${search}%`;
       params.push(like, like, like);
     }
-
-    if (conditions.length > 0) {
-      query += ' WHERE ' + conditions.join(' AND ');
-    }
-
+    if (conditions.length > 0) query += ' WHERE ' + conditions.join(' AND ');
     query += ' ORDER BY t.created_at DESC';
 
     const [tasks] = await pool.query(query, params);
@@ -71,15 +65,12 @@ const getTaskById = async (req, res) => {
        WHERE t.id = ?`,
       [id]
     );
-
     if (tasks.length === 0) {
       return res.status(404).json({ success: false, message: 'Task tidak ditemukan.' });
     }
 
-    // Cek apakah sudah ada formulir untuk task ini
     const [formulir] = await pool.query(
-      'SELECT * FROM formulir_pendataan WHERE task_id = ?',
-      [id]
+      'SELECT * FROM formulir_pendataan WHERE task_id = ?', [id]
     );
 
     return res.status(200).json({
@@ -96,13 +87,87 @@ const getTaskById = async (req, res) => {
 };
 
 // ─────────────────────────────────────────────────────────────
+// GET TASK BY NOP  —  GET /api/formulir/nop/:nop   ← BARU Phase 3
+// Dipanggil setelah Scanner berhasil membaca QR/Barcode NOP
+// NOP dari barcode bisa berformat: "32.04.010.001.001.0001.0"
+// atau tanpa titik:                "32040100010010001 0"
+// Fungsi ini menangani kedua format
+// ─────────────────────────────────────────────────────────────
+const getTaskByNop = async (req, res) => {
+  try {
+    // Ambil NOP dari URL param, decode jika ada karakter special
+    const rawNop = decodeURIComponent(req.params.nop).trim();
+
+    // Bersihkan NOP: hapus spasi dan normalisasi
+    // Coba exact match dulu, lalu fuzzy match (hapus titik & spasi)
+    const cleanNop = rawNop.replace(/[\s.]/g, ''); // hapus titik dan spasi
+
+    // Query: coba exact match ATAU match setelah strip non-digit
+    const [tasks] = await pool.query(
+      `SELECT
+          t.*,
+          u.full_name    AS enumerator_name,
+          f.id           AS formulir_id,
+          f.status_sync  AS formulir_status,
+          f.luas_bumi,
+          f.luas_bangunan,
+          f.kondisi_bangunan,
+          f.status_sync
+       FROM survey_tasks t
+       LEFT JOIN users              u ON t.assigned_to = u.id
+       LEFT JOIN formulir_pendataan f ON t.id          = f.task_id
+       WHERE t.nop = ?
+          OR REPLACE(REPLACE(t.nop, '.', ''), ' ', '') = ?
+       LIMIT 1`,
+      [rawNop, cleanNop]
+    );
+
+    if (tasks.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: `NOP "${rawNop}" tidak ditemukan dalam database. `
+               + 'Pastikan kode yang discan adalah NOP yang terdaftar.',
+      });
+    }
+
+    const task = tasks[0];
+
+    // Ambil data formulir lengkap jika sudah ada
+    let formulirDetail = null;
+    if (task.formulir_id) {
+      const [formulir] = await pool.query(
+        'SELECT * FROM formulir_pendataan WHERE task_id = ?',
+        [task.id]
+      );
+      if (formulir.length > 0) {
+        formulirDetail = formulir[0];
+        // Parse JSON fasilitas
+        if (formulirDetail.fasilitas && typeof formulirDetail.fasilitas === 'string') {
+          try { formulirDetail.fasilitas = JSON.parse(formulirDetail.fasilitas); } catch (_) {}
+        }
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `Task ditemukan: ${task.nama_wp}`,
+      data: {
+        task:     task,
+        formulir: formulirDetail,
+      },
+    });
+  } catch (error) {
+    console.error('getTaskByNop error:', error);
+    return res.status(500).json({ success: false, message: 'Gagal mencari data NOP.' });
+  }
+};
+
+// ─────────────────────────────────────────────────────────────
 // SAVE FORMULIR  —  POST /api/formulir/save
-// Upsert: buat baru atau update jika sudah ada
 // ─────────────────────────────────────────────────────────────
 const saveFormulir = async (req, res) => {
   try {
-    const enumeratorId = req.user.id; // dari JWT middleware
-
+    const enumeratorId = req.user.id;
     const {
       task_id,
       nop,
@@ -133,39 +198,23 @@ const saveFormulir = async (req, res) => {
       status_hunian,
     } = req.body;
 
-    // ── Validasi field wajib ──────────────────────────────────
     if (!task_id || !nop) {
-      return res.status(400).json({
-        success: false,
-        message: 'task_id dan nop wajib diisi.',
-      });
+      return res.status(400).json({ success: false, message: 'task_id dan nop wajib diisi.' });
     }
-    if (!luas_bumi && luas_bumi !== 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'Luas bumi wajib diisi.',
-      });
+    if (luas_bumi === undefined || luas_bumi === null) {
+      return res.status(400).json({ success: false, message: 'Luas bumi wajib diisi.' });
     }
-    if (!luas_bangunan && luas_bangunan !== 0) {
-      return res.status(400).json({
-        success: false,
-        message: 'Luas bangunan wajib diisi.',
-      });
+    if (luas_bangunan === undefined || luas_bangunan === null) {
+      return res.status(400).json({ success: false, message: 'Luas bangunan wajib diisi.' });
     }
 
-    // ── Cek task ada ──────────────────────────────────────────
-    const [tasks] = await pool.query(
-      'SELECT id FROM survey_tasks WHERE id = ?',
-      [task_id]
-    );
+    const [tasks] = await pool.query('SELECT id FROM survey_tasks WHERE id = ?', [task_id]);
     if (tasks.length === 0) {
       return res.status(404).json({ success: false, message: 'Task tidak ditemukan.' });
     }
 
-    // ── Cek apakah formulir sudah ada untuk task ini ──────────
     const [existing] = await pool.query(
-      'SELECT id FROM formulir_pendataan WHERE task_id = ?',
-      [task_id]
+      'SELECT id FROM formulir_pendataan WHERE task_id = ?', [task_id]
     );
 
     const fasilitasJson = fasilitas
@@ -173,7 +222,6 @@ const saveFormulir = async (req, res) => {
       : null;
 
     if (existing.length > 0) {
-      // ── UPDATE formulir yang sudah ada ────────────────────
       await pool.query(
         `UPDATE formulir_pendataan SET
           luas_bumi        = ?, jenis_bumi       = ?, kondisi_tanah    = ?,
@@ -210,20 +258,15 @@ const saveFormulir = async (req, res) => {
           task_id,
         ]
       );
-
-      // Update status task jadi in_progress
       await pool.query(
-        "UPDATE survey_tasks SET status_task = 'in_progress' WHERE id = ?",
-        [task_id]
+        "UPDATE survey_tasks SET status_task='in_progress' WHERE id=?", [task_id]
       );
-
       return res.status(200).json({
         success: true,
         message: 'Formulir berhasil diperbarui.',
         data: { formulir_id: existing[0].id },
       });
     } else {
-      // ── INSERT formulir baru ──────────────────────────────
       const [result] = await pool.query(
         `INSERT INTO formulir_pendataan
           (task_id, enumerator_id, nop,
@@ -263,13 +306,10 @@ const saveFormulir = async (req, res) => {
           status_hunian || null,
         ]
       );
-
-      // Update status task jadi in_progress
       await pool.query(
-        "UPDATE survey_tasks SET status_task = 'in_progress', assigned_to = ? WHERE id = ?",
+        "UPDATE survey_tasks SET status_task='in_progress', assigned_to=? WHERE id=?",
         [enumeratorId, task_id]
       );
-
       return res.status(201).json({
         success: true,
         message: 'Formulir berhasil disimpan.',
@@ -284,39 +324,27 @@ const saveFormulir = async (req, res) => {
 
 // ─────────────────────────────────────────────────────────────
 // SUBMIT FORMULIR  —  POST /api/formulir/submit/:task_id
-// Tandai formulir sebagai completed (siap sync ke SIMPBB)
 // ─────────────────────────────────────────────────────────────
 const submitFormulir = async (req, res) => {
   try {
     const { task_id } = req.params;
-
-    // Cek formulir ada
-    const [formulir] = await pool.query(
-      'SELECT id FROM formulir_pendataan WHERE task_id = ?',
-      [task_id]
+    const [formulir]  = await pool.query(
+      'SELECT id FROM formulir_pendataan WHERE task_id=?', [task_id]
     );
-
     if (formulir.length === 0) {
       return res.status(404).json({
         success: false,
         message: 'Formulir belum diisi. Isi formulir terlebih dahulu.',
       });
     }
-
-    // Update status
     await pool.query(
-      "UPDATE formulir_pendataan SET status_sync = 'synced', synced_at = NOW() WHERE task_id = ?",
+      "UPDATE formulir_pendataan SET status_sync='synced', synced_at=NOW() WHERE task_id=?",
       [task_id]
     );
     await pool.query(
-      "UPDATE survey_tasks SET status_task = 'completed' WHERE id = ?",
-      [task_id]
+      "UPDATE survey_tasks SET status_task='completed' WHERE id=?", [task_id]
     );
-
-    return res.status(200).json({
-      success: true,
-      message: 'Formulir berhasil disubmit. Status: Completed.',
-    });
+    return res.status(200).json({ success: true, message: 'Formulir berhasil disubmit.' });
   } catch (error) {
     console.error('submitFormulir error:', error);
     return res.status(500).json({ success: false, message: 'Gagal submit formulir.' });
@@ -329,28 +357,22 @@ const submitFormulir = async (req, res) => {
 const getFormulirByTask = async (req, res) => {
   try {
     const { task_id } = req.params;
-
-    const [formulir] = await pool.query(
+    const [formulir]  = await pool.query(
       `SELECT f.*, t.nop, t.nama_wp, t.alamat_op, t.status_task
        FROM formulir_pendataan f
        JOIN survey_tasks t ON f.task_id = t.id
        WHERE f.task_id = ?`,
       [task_id]
     );
-
     if (formulir.length === 0) {
       return res.status(404).json({
-        success: false,
-        message: 'Formulir belum diisi untuk task ini.',
+        success: false, message: 'Formulir belum diisi untuk task ini.',
       });
     }
-
-    // Parse JSON fasilitas
     const data = formulir[0];
     if (data.fasilitas && typeof data.fasilitas === 'string') {
       try { data.fasilitas = JSON.parse(data.fasilitas); } catch (_) { }
     }
-
     return res.status(200).json({ success: true, data });
   } catch (error) {
     console.error('getFormulirByTask error:', error);
@@ -360,7 +382,6 @@ const getFormulirByTask = async (req, res) => {
 
 // ─────────────────────────────────────────────────────────────
 // GET STATS  —  GET /api/formulir/stats
-// Ringkasan data untuk dashboard
 // ─────────────────────────────────────────────────────────────
 const getStats = async (req, res) => {
   try {
@@ -387,6 +408,7 @@ const getStats = async (req, res) => {
 module.exports = {
   getAllTasks,
   getTaskById,
+  getTaskByNop,     // ← BARU Phase 3
   saveFormulir,
   submitFormulir,
   getFormulirByTask,
