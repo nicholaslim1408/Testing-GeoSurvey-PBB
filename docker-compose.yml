@@ -6,7 +6,7 @@ services:
     container_name: geosurvey_db
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: root_password_here
+      MYSQL_ROOT_PASSWORD: rdtnn271205
       MYSQL_DATABASE: geosurvey_pbb
       MYSQL_USER: user_pbb
       MYSQL_PASSWORD: user_password
@@ -17,7 +17,7 @@ services:
       # Mount file init.sql agar dijalankan otomatis saat db pertama kali dibuat
       - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
-      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost", "-u", "root", "-proot_password_here"]
+      test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost", "-u", "root", "-prdtnn271205"]
       timeout: 20s
       retries: 10
 
@@ -34,7 +34,7 @@ services:
       - DB_HOST=db
       - DB_PORT=3306
       - DB_USER=root
-      - DB_PASSWORD=root_password_here
+      - DB_PASSWORD=rdtnn271205
       - DB_NAME=geosurvey_pbb
       - JWT_SECRET=supersecretjwtkey_geosurvey
       - JWT_EXPIRES_IN=7d

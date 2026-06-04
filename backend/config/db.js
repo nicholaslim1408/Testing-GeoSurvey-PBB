@@ -12,7 +12,7 @@ const pool = mysql.createPool({
   host:               process.env.DB_HOST     || 'localhost',
   port:               parseInt(process.env.DB_PORT) || 3306,
   user:               process.env.DB_USER     || 'root',
-  password:           process.env.DB_PASSWORD || '',
+  password:           process.env.DB_PASSWORD || 'rdtnn271205',
   database:           process.env.DB_NAME     || 'geosurvey_pbb',
   waitForConnections: true,    // Tunggu jika semua koneksi sedang dipakai
   connectionLimit:    10,      // Maksimal 10 koneksi bersamaan

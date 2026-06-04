@@ -17,6 +17,7 @@ import '../models/foto_bangunan_model.dart';
 import '../utils/database_helper.dart';
 import 'camera_preview_screen.dart';
 import 'gps_reference_screen.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class FormulirScreen extends StatefulWidget {
   final SurveyTask task;
@@ -282,7 +283,9 @@ class _FormulirScreenState extends State<FormulirScreen> {
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Image.file(File(path), height: 200, fit: BoxFit.cover),
+            kIsWeb
+              ? Image.network(path, height: 200, fit : BoxFit.cover)
+              : Image.file(File(path), height: 200, fit : BoxFit.cover),
             const SizedBox(height: 10),
             Text('Lat: $lat\nLng: $lng', style: const TextStyle(fontSize: 12)),
             const SizedBox(height: 10),
@@ -301,6 +304,7 @@ class _FormulirScreenState extends State<FormulirScreen> {
             onPressed: () async {
               Navigator.pop(ctx);
               // Simpan ke SQLite
+              try{
               final f = FotoBangunanModel(
                 taskId: widget.task.id,
                 klasifikasi: klasifikasi.toLowerCase(),
@@ -311,6 +315,20 @@ class _FormulirScreenState extends State<FormulirScreen> {
               );
               await DatabaseHelper.instance.create(f);
               await _loadLocalPhotos(); // Refresh UI
+
+              if(mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Foto berhasil disimpan!'), backgroundColor: Colors.green),
+                );
+              }
+              } catch (e) {
+                if (mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Gagal menyimpan ke Database : $e'), backgroundColor: Colors.red),
+                  );
+                }
+
+              }
             },
             child: const Text('Ya, Simpan'),
           ),
@@ -763,7 +781,9 @@ class _FormulirScreenState extends State<FormulirScreen> {
                 border: Border.all(color: AppColors.primary, width: 2),
                 borderRadius: BorderRadius.circular(8),
                 image: DecorationImage(
-                  image: FileImage(File(p.filePath)),
+                  image: kIsWeb
+                      ? NetworkImage(p.filePath) as ImageProvider
+                      : FileImage(File(p.filePath)) as ImageProvider,
                   fit: BoxFit.cover,
                 ),
               ),

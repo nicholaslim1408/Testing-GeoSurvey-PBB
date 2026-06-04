@@ -4,7 +4,7 @@
 // ============================================================
 
 class ApiConfig {
-  static const String baseUrl = 'http://localhost:3000';
+  static const String baseUrl = 'http://10.65.74.61:3000';
 
   // ── Auth Endpoints (Phase 1) ──────────────────────────────
   static const String register = '$baseUrl/api/auth/register';
