@@ -67,7 +67,7 @@ class _LoginScreenState extends State<LoginScreen>
     });
 
     final result = await AuthService.login(
-      username: _usernameCtrl.text,
+      username: _usernameCtrl.text, 
       password: _passwordCtrl.text,
     );
 
