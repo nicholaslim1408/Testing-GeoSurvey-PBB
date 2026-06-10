@@ -67,7 +67,7 @@ class _LoginScreenState extends State<LoginScreen>
     });
 
     final result = await AuthService.login(
-      username: _usernameCtrl.text,
+      username: _usernameCtrl.text, 
       password: _passwordCtrl.text,
     );
 
@@ -75,7 +75,7 @@ class _LoginScreenState extends State<LoginScreen>
 
     setState(() => _isLoading = false);
 
-    if (result.success) {
+    if (result.success) { 
       // Navigasi ke Dashboard
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const DashboardScreen()),

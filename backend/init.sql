@@ -103,6 +103,17 @@ CREATE TABLE IF NOT EXISTS formulir_pendataan (
   FOREIGN KEY (enumerator_id) REFERENCES users(id)        ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS foto_bangunan (
+  id              INT AUTO_INCREMENT PRIMARY KEY,
+  formulir_id     INT           NOT NULL,
+  klasifikasi     ENUM('depan', 'kiri', 'kanan', 'belakang') NOT NULL,
+  file_path       VARCHAR(255)  NOT NULL,
+  latitude        DECIMAL(10,8) NULL,
+  longitude       DECIMAL(11,8) NULL,
+  created_at      DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (formulir_id) REFERENCES formulir_pendataan(id) ON DELETE CASCADE
+);
+
 -- 5. Seed Survey Tasks
 INSERT IGNORE INTO survey_tasks
   (nop, nama_wp, alamat_op, kd_kecamatan, kd_kelurahan, kd_blok, no_urut, kd_jns_op, status_task, latitude, longitude)

@@ -1,6 +1,6 @@
 // lib/screens/dashboard_screen.dart
 // ============================================================
-// UPDATE Phase 2: tambah statistik task & navigasi ke formulir
+// UPDATE Phase 3: aktifkan navigasi Scanner NOP di sidebar
 // ============================================================
 
 import 'package:flutter/material.dart';
@@ -13,6 +13,7 @@ import '../models/user_model.dart';
 import '../models/formulir_model.dart';
 import 'login_screen.dart';
 import 'task_list_screen.dart';
+import 'scanner_screen.dart'; 
 
 class DashboardScreen extends StatefulWidget {
   const DashboardScreen({super.key});
@@ -108,7 +109,8 @@ class _DashboardScreenState extends State<DashboardScreen>
         title: Text('Konfirmasi Logout',
             style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w700)),
         content: Text('Apakah kamu yakin ingin keluar?',
-            style: GoogleFonts.plusJakartaSans(color: AppColors.textSecondary)),
+            style: GoogleFonts.plusJakartaSans(
+                color: AppColors.textSecondary)),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx, false),
@@ -121,19 +123,19 @@ class _DashboardScreenState extends State<DashboardScreen>
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.error,
               foregroundColor: Colors.white,
-              minimumSize: Size.zero,
+              minimumSize:     Size.zero,
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
               shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8)),
               elevation: 0,
             ),
             child: Text('Logout',
-                style: GoogleFonts.plusJakartaSans(fontWeight: FontWeight.w600)),
+                style: GoogleFonts.plusJakartaSans(
+                    fontWeight: FontWeight.w600)),
           ),
         ],
       ),
     );
-
     if (confirm == true) {
       await AuthService.logout();
       if (mounted) {
@@ -191,12 +193,18 @@ class _DashboardScreenState extends State<DashboardScreen>
 
   // ── Sidebar ────────────────────────────────────────────────
   Widget _buildSidebar() {
+    // (icon, label, isComingSoon, onTap)
     final navItems = [
-      (Icons.dashboard_rounded,      'Dashboard',          false),
-      (Icons.assignment_rounded,     'Formulir Pendataan', false), // aktif Phase 2
-      (Icons.qr_code_scanner_rounded,'Scanner NOP',        true),  // Phase 3
-      (Icons.camera_alt_rounded,     'Kamera & GPS',       true),  // Phase 4
-      (Icons.satellite_alt_rounded,  'Citra Satelit',      true),  // Phase 5
+      (Icons.assignment_rounded,      'Formulir Pendataan', false, () {
+        Navigator.push(context,
+          MaterialPageRoute(builder: (_) => const TaskListScreen()),
+        ).then((_) => _loadStats());
+      }),
+      (Icons.qr_code_scanner_rounded, 'Scanner NOP',        false, () {
+        Navigator.push(context,
+          MaterialPageRoute(builder: (_) => const ScannerScreen()),
+        ).then((_) => _loadStats());
+      }),
     ];
 
     return SafeArea(
@@ -344,14 +352,8 @@ class _DashboardScreenState extends State<DashboardScreen>
                         borderRadius: BorderRadius.circular(10)),
                     onTap: isComingSoon ? null : () {
                       setState(() => _selectedNav = i);
-                      _closeSidebar(); // Auto-close sidebar after navigation
-                      if (i == 1) {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                              builder: (_) => const TaskListScreen()),
-                        ).then((_) => _loadStats()); // refresh stats setelah kembali
-                      }
+                      _closeSidebar();
+                      item.$4(); // panggil onTap masing-masing item
                     },
                   ),
                 );
@@ -426,7 +428,7 @@ class _DashboardScreenState extends State<DashboardScreen>
           ]),
           const SizedBox(height: 28),
 
-          // ── Statistik Task ─────────────────────────────────
+          // ── Statistik Survey ────────────────────────────────
           Text('Statistik Survey',
               style: GoogleFonts.plusJakartaSans(
                   fontSize: 16, fontWeight: FontWeight.w700,
@@ -442,15 +444,6 @@ class _DashboardScreenState extends State<DashboardScreen>
                   color: AppColors.textPrimary)),
           const SizedBox(height: 12),
           _buildQuickActions(),
-          const SizedBox(height: 28),
-
-          // ── Phase Status ──────────────────────────────────
-          Text('Status Pengembangan',
-              style: GoogleFonts.plusJakartaSans(
-                  fontSize: 16, fontWeight: FontWeight.w700,
-                  color: AppColors.textPrimary)),
-          const SizedBox(height: 12),
-          _buildPhaseCards(),
         ]),
       ),
     );
@@ -467,7 +460,6 @@ class _DashboardScreenState extends State<DashboardScreen>
 
     return LayoutBuilder(
       builder: (context, constraints) {
-        // 2 columns on small screens, up to 4 on wide screens
         const spacing = 14.0;
         final columns = constraints.maxWidth >= 700 ? 4
                       : constraints.maxWidth >= 500 ? 3
@@ -528,20 +520,18 @@ class _DashboardScreenState extends State<DashboardScreen>
             label:   'Isi Formulir',
             desc:    'Mulai pendataan properti',
             color:   AppColors.primary,
-            onTap: () => Navigator.push(
-              context,
+            onTap: () => Navigator.push(context,
               MaterialPageRoute(builder: (_) => const TaskListScreen()),
             ).then((_) => _loadStats()),
           ),
           _buildActionCard(
             width:   cardWidth,
-            icon:    Icons.list_alt_rounded,
-            label:   'Lihat Semua Task',
-            desc:    'Cek status survey task',
+            icon:    Icons.qr_code_scanner_rounded,
+            label:   'Scan NOP',
+            desc:    'Scan barcode/QR properti',
             color:   AppColors.accent,
-            onTap: () => Navigator.push(
-              context,
-              MaterialPageRoute(builder: (_) => const TaskListScreen()),
+            onTap: () => Navigator.push(context,
+              MaterialPageRoute(builder: (_) => const ScannerScreen()),
             ).then((_) => _loadStats()),
           ),
         ]);
@@ -592,77 +582,6 @@ class _DashboardScreenState extends State<DashboardScreen>
                   fontSize: 12, color: AppColors.textSecondary)),
         ]),
       ),
-    );
-  }
-
-  // ── Phase Cards ────────────────────────────────────────────
-  Widget _buildPhaseCards() {
-    final phases = [
-      ('Phase 1', 'Setup & Auth',    Icons.lock_rounded,           true),
-      ('Phase 2', 'Formulir',        Icons.assignment_rounded,     true),  // ← selesai
-      ('Phase 3', 'Scanner NOP',     Icons.qr_code_rounded,        false),
-      ('Phase 4', 'Kamera & GPS',    Icons.camera_alt_rounded,     false),
-      ('Phase 5', 'Citra Satelit',   Icons.satellite_alt_rounded,  false),
-    ];
-
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        const spacing = 14.0;
-        final columns = constraints.maxWidth >= 700 ? 4
-                      : constraints.maxWidth >= 500 ? 3
-                      : 2;
-        final cardWidth = (constraints.maxWidth - spacing * (columns - 1)) / columns;
-
-        return Wrap(spacing: spacing, runSpacing: spacing, children: phases.map((p) {
-          final isDone = p.$4;
-          return Container(
-            width:      cardWidth,
-            padding:    const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color:        isDone
-                  ? AppColors.accent.withOpacity(0.08)
-                  : AppColors.surface,
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: isDone
-                    ? AppColors.accent.withOpacity(0.3)
-                    : AppColors.border,
-              ),
-            ),
-            child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-              Row(children: [
-                Icon(p.$3,
-                    size:  18,
-                    color: isDone ? AppColors.accent : AppColors.textSecondary),
-                const Spacer(),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-                  decoration: BoxDecoration(
-                    color: isDone
-                        ? AppColors.accent.withOpacity(0.15)
-                        : AppColors.surfaceVariant,
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: Text(isDone ? '✓ Done' : 'Soon',
-                      style: GoogleFonts.plusJakartaSans(
-                          fontSize: 10, fontWeight: FontWeight.w600,
-                          color: isDone
-                              ? AppColors.accent
-                              : AppColors.textSecondary)),
-                ),
-              ]),
-              const SizedBox(height: 10),
-              Text(p.$1,
-                  style: GoogleFonts.plusJakartaSans(
-                      fontSize: 10, color: AppColors.textSecondary)),
-              Text(p.$2,
-                  style: GoogleFonts.plusJakartaSans(
-                      fontSize: 13, fontWeight: FontWeight.w700,
-                      color: AppColors.textPrimary)),
-            ]),
-          );
-        }).toList());
-      },
     );
   }
 }

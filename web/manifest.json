@@ -1,6 +1,6 @@
 {
-    "name": "geosurvey_project",
-    "short_name": "geosurvey_project",
+    "name": "lokasi_tracker",
+    "short_name": "lokasi_tracker",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
